@@ -1,0 +1,10 @@
+#!/bin/ksh
+
+cyc=`cut -c 15-16 /lfs/h1/ops/prod/com/date/t12z`
+ymd=`cut -c 7-14 /lfs/h1/ops/prod/com/date/t12z`
+version=v4.2
+
+echo 'here'
+cd /lfs/h2/emc/vpppg/save/geoffrey.manikin/meg
+qsub run_nagrib2_gfspcp_4cyc
+exit

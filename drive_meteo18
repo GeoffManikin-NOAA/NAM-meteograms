@@ -1,0 +1,16 @@
+#!/bin/ksh
+
+cyc=`cut -c 15-16 /lfs/h1/ops/prod/com/date/t18z`
+ymd=`cut -c 7-14 /lfs/h1/ops/prod/com/date/t18z`
+version=v4.2
+
+if [ ! -s /lfs/h1/ops/prod/com/nam/${version}/nam.${ymd}/nam_${ymd}${cyc}.sfc.tm00 ]
+then
+ echo 'sleeping'
+  sleep 600 
+fi
+
+echo 'here'
+cd /lfs/h2/emc/vpppg/save/geoffrey.manikin/meteograms.nam
+qsub run_meteo_poe18
+exit

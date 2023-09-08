@@ -1,0 +1,29 @@
+#!/bin/ksh
+
+source /u/geoffrey.manikin/.bashrc
+source /lfs/h2/emc/vpppg/save/geoffrey.manikin/versions/run.ver
+echo $envvar_ver
+module load envvar/${envvar_ver}
+module load PrgEnv-intel/${PrgEnv-intel_ver}
+module load intel/${intel_ver}
+module load craype/${craype_ver}
+module load cray-mpich/${craympich_ver}
+module load cfp/${cfp_ver}
+module load wgrib2/${wgrib2_ver}
+echo 'here'
+module load cray-libsci
+
+cyc=`cut -c 15-16 /lfs/h1/ops/prod/com/date/t00z`
+ymd=`cut -c 7-14 /lfs/h1/ops/prod/com/date/t00z`
+version=v4.2
+
+if [ ! -s /lfs/h1/ops/prod/com/nam/${version}/nam.${ymd}/nam_${ymd}${cyc}.sfc.tm00 ]
+then
+ echo 'sleeping'
+  sleep 600 
+fi
+
+echo 'here'
+cd /lfs/h2/emc/vpppg/save/geoffrey.manikin/meteograms.nam
+qsub run_meteo_poe00
+exit

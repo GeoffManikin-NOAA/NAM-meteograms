@@ -1,0 +1,45 @@
+#!/bin/csh
+
+set file_name = $1
+@ nlines = `cat $file_name | wc -l`
+echo $nlines
+
+cd /meso/save/wx20mg/meteograms.nam
+@ counter = $nlines / 32 
+echo $counter
+
+@ divisor = $nlines / 32 
+@ remainder = $nlines % 32 
+echo $divisor
+
+@ line = 0
+@ count = 0
+@ tally = 1
+
+while ( $line < $nlines )
+    if ($tally <= $remainder) then
+      @ counter = $divisor + 1
+    else
+      @ counter = $divisor
+    endif
+    @ line = $line + 1
+    @ count = $count + 1
+    set stn = `awk 'NR==j{print $0}' j=$line $file_name`
+echo $stn
+
+set stnm=`echo $stn | cut -c1-6`
+#set stid=`echo $stn | cut -c30-56`
+set stid=`awk 'NR==j{print $0}' j=$line $file_name | cut -c30-56`
+echo $stnm
+echo $stid
+echo $stnm $stid >> input_list_$tally
+if ( $count == $counter) then
+  echo "done" >> input_list_$tally
+  @ tally = $tally + 1
+  @ count = 0
+endif
+
+if ( $stnm == done ) exit
+
+end
+exit

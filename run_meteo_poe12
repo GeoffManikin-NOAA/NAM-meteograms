@@ -1,0 +1,84 @@
+#!/bin/bash
+#
+#PBS -N meteo12
+#PBS -o /lfs/h2/emc/vpppg/save/geoffrey.manikin/meteograms.nam/meteo12.out
+#PBS -e /lfs/h2/emc/vpppg/save/geoffrey.manikin/meteograms.nam/meteo12.err
+#PBS -l select=2:ncpus=16:mpiprocs=4:mem=200GB
+#PBS -q dev
+#PBS -l walltime=01:00:00
+#PBS -A VERF-DEV
+
+set +x
+
+VERFILE=/lfs/h2/emc/vpppg/save/geoffrey.manikin/versions/run.ver
+. $VERFILE
+
+. /etc/ksh.kshrc.local
+module purge
+module load envvar/${envvar_ver}
+module load PrgEnv-intel/${PrgEnv_intel_ver}
+module load intel/${intel_ver}
+module load craype/${craype_ver}
+module load cray-mpich/${cray_mpich_ver}
+module load cray-pals/${cray_pals_ver}
+module load cfp/${cfp_ver}
+module load libjpeg/${libjpeg_ver}
+module load grib_util/${grib_util_ver}
+module load prod_util/${prod_util_ver}
+module load util_shared/${util_shared_ver}
+module load gempak/${gempak_ver}
+module load wgrib2/2.0.8
+module load imagemagick/7.0.8-7
+module cray-libsci
+# print out loaded modules
+module list
+
+export HOLDIN=/lfs/h2/emc/stmp/geoffrey.manikin
+
+cyc=`cut -c 15-16 /lfs/h1/ops/prod/com/date/t12z`
+ymd=`cut -c 7-14 /lfs/h1/ops/prod/com/date/t12z`
+version=v4.2
+export cyc
+
+if [ ! -s /lfs/h1/ops/prod/com/nam/${version}/nam.${ymd}/nam_${ymd}${cyc}.sfc.tm00 ]
+then
+  sleep 600
+fi
+
+rm -rf $HOLDIN/meteo*nam
+mkdir -p $HOLDIN/meteograms.nam
+mkdir -p $HOLDIN/meteograms.nam/hold
+set +x
+set -x
+
+cp /lfs/h1/ops/prod/com/date/t12z /lfs/h2/emc/vpppg/save/geoffrey.manikin/meteograms.nam/METEODATE
+cd $HOLDIN/meteograms.nam
+
+set +x
+
+rm poescript
+
+split="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32"
+for unit in $split
+do
+
+echo $unit
+mkdir -p $HOLDIN/meteograms.nam/meteogram${unit}
+echo "/lfs/h2/emc/vpppg/save/geoffrey.manikin/meteograms.nam/run_mgm_new ${unit} ${cyc} ${version}" >> poescript
+done
+
+chmod 775 poescript
+#
+# Execute the script.
+
+echo beforelsf
+mpiexec hostname > hostname.out
+module list > module.out
+mpiexec hostname >oh 2>eh
+#mpirun -l cfp poescript
+mpiexec -np 4 --cpu-bind core --depth=2 cfp poescript > poe_out.txt
+echo pastlsf
+
+#qsub < /lfs/h2/emc/vpppg/save/geoffrey.manikin/meteograms.nam/run_ftp_meteo
+exit
+

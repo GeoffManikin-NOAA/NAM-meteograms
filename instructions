@@ -1,0 +1,12 @@
+
+1. ncargf77 -o dispsta.x dispsta.f -L/usr/local/lib -lessl -lmass /nwprod/w3lib90/w3lib_4_64 /nwprod/w3lib90/bacio_4
+
+2.   cp /nwprod/parm/nam_staids.parm plotlist
+
+3.    ./dispsta.x < plotlist > meteo_map
+
+4.    convert gmeta8.ps to map.region.gif
+         also convert -geometry 250x200 gmeta8.ps map.region.mini.gif
+
+/nwprod/lib -lw3_4
+/nwprod/lib -lbacio_4

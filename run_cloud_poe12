@@ -1,0 +1,59 @@
+#!/bin/ksh --login
+#
+#PBS -N meteo12
+#PBS -o /lfs/h2/emc/vpppg/save/meteograms.nam/geoffrey.manikin/meteo12.out
+#PBS -e /lfs/h2/emc/vpppg/save/geoffrey.manikin/meteograms.nam/meteo12.err
+#PBS -l select=2:ncpus=16:mpiprocs=4:mem=200GB
+#PBS -l walltime=00:50
+#PBS -A VERF-DEV
+
+set +x
+
+export HOLDIN=/lfs/h2/emc/stmp/Geoffrey.Manikin
+
+cyc=`cut -c 15-16 /lfs/h1/ops/prod/com/date/t12z`
+ymd=`cut -c 7-14 /lfs/h1/ops/prod/com/date/t12z`
+version=v4.2
+export cyc
+
+if [ ! -s /lfs/h1/ops/prod/com/nam/${version}/nam.${ymd}/nam_${ymd}${cyc}.sfc.tm00 ]
+then
+  sleep 600
+fi
+
+rm -rf $HOLDIN/meteo*nam
+mkdir -p $HOLDIN/meteograms.nam
+mkdir -p $HOLDIN/meteograms.nam/hold
+set +x
+set -x
+
+cp /lfs/h1/ops/prod/com/date/t12z /lfs/h2/emc/vpppg/save/Geoffrey.Manikin/meteograms.nam/METEODATE
+cd $HOLDIN/meteograms.nam
+
+set +x
+
+rm poescript
+
+split="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32"
+
+for unit in $split
+do
+
+echo $unit
+mkdir -p $HOLDIN/meteograms.nam/meteogram${unit}
+echo "/lfs/h2/emc/vpppg/save/Geoffrey.Manikin/meteograms.nam/run_mgm_new ${unit} ${cyc} ${ersion}" >> poescript
+done
+
+chmod 775 poescript
+#
+# Execute the script.
+
+echo beforelsf
+mpiexec hostname >oh 2>eh
+#mpirun -l cfp poescript
+mpiexec -np 4 --cpu-bind core --depth=2 cfp poescript > poe_out.txt
+echo pastlsf
+
+qsub < /lfs/h2/emc/vpppg/save/geoffrey.manikin/meteograms.nam/run_ftp_meteo
+exit
+

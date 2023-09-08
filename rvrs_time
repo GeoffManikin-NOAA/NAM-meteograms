@@ -1,0 +1,96 @@
+#!/bin/csh -f
+
+if ( $#argv == 0 ) then
+    echo "\
+   This script goes backward in time beginning at the\
+   starting time. Inputs are\
+ \
+ 	YYMMDDHH	=	starting year month day hour\
+ 	DH		=	time increment in hours (- => forward)\
+ 	NDH		=	number of increments\
+ \
+ 	There will be NDH + 1 output times. \
+"
+    exit
+endif
+
+set ymdh = $1
+@ dh = $2
+@ ndh = $3
+
+set monday = ( 31 28 31 30 31 30 31 31 30 31 30 31 )
+set yy = `echo $ymdh | cut -c1-2`
+set mm = `echo $ymdh | cut -c3-4`
+set dd = `echo $ymdh | cut -c5-6`
+set hh = `echo $ymdh | cut -c7-8`
+
+set times = ${yy}${mm}${dd}/${hh}
+set ymdhs = ${yy}${mm}${dd}${hh}
+
+set ddd = $dd
+set mmm = $mm
+@ yy = $yy
+
+@ hr = $hh
+@ icnt = 0
+
+while ( $icnt < $ndh )
+    @ icnt = $icnt + 1
+    @ hr = $hr - $dh
+
+    if ( $hr < 0 ) then
+	@ hr = $hr + 24
+	@ dd = $dd - 1
+	if ( $dd == 0 ) then
+	    @ mm = $mm - 1
+	    if ( $mm == 0 ) then
+		@ yy = $yy - 1
+		if ( $yy < 0 ) @ yy = $yy + 100
+		@ mm = 12
+	    endif
+	    set mmm = $mm
+    	    if ( $mm < 10 ) set mmm = 0$mm
+	    @ dd = $monday[$mm]
+	    if ( $yy % 4 == 0 && $mm == 2 ) @ dd = $dd + 1
+	endif
+	set ddd = $dd
+    	if ( $dd < 10 ) set ddd = 0$dd
+    endif
+    if ( $hr >= 24 ) then
+	@ hr = $hr - 24
+	@ dd = $dd + 1
+	@ dtst = $monday[$mm]
+	@ mm = $mm
+	@ yy = $yy
+	if ( $yy % 4 == 0 && $mm == 2 ) @ dtst = $dtst + 1
+	if ( $dd > $dtst ) then
+	    @ mm = $mm + 1
+	    if ( $mm == 13 ) then
+		@ yy = $yy + 1
+		if ( $yy > 99 ) @ yy = $yy - 100
+		@ mm = 1
+	    endif
+	    set mmm = $mm
+    	    if ( $mm < 10 ) set mmm = 0$mm
+	    @ dd = 1
+	endif
+	set ddd = $dd
+    	if ( $dd < 10 ) set ddd = 0$dd
+    endif
+    set hhh = $hr
+    if ( $hr < 10 ) set hhh = 0$hr
+    set yyy = $yy
+    if ( $yy < 10 ) set yyy = 0$yy
+    set times = ( $times ${yyy}${mmm}${ddd}/${hhh} )
+    set ymdhs = ( $ymdhs ${yyy}${mmm}${ddd}${hhh} )
+end
+
+if ( $#argv == 4 ) then
+    foreach t ( $times )
+    	echo $t
+    end
+else
+    foreach t ( $ymdhs )
+    	echo $t
+    end
+endif

@@ -1,0 +1,32 @@
+#! /bin/ksh
+#
+#BSUB -J meteo.ftp
+#BSUB -oo /gpfs/dell2/emc/verification/save/Geoffrey.Manikin/meteograms.nam/meteoftp.out
+#BSUB -eo /gpfs/dell2/emc/verification/save/Geoffrey.Manikin/meteograms.nam/meteoftp.out
+#BSUB -n 1
+#BSUB -W 00:10
+#BSUB -P NAM-T2O
+#BSUB -cwd /gpfs/dell1/stmp/Geoffrey.Manikin
+#BSUB -R "affinity[core]"
+#BSUB -q dev_transfer
+#BSUB -R "rusage[mem=300]"
+
+set -x
+
+cd /gpfs/dell1/stmp/Geoffrey.Manikin/meteograms.nam/hold
+
+date
+date > holddate
+echo $holddate
+dayoweek=`cut -c 1-3 holddate`
+cyc=`cat /gpfs/dell2/emc/verification/save/Geoffrey.Manikin/meteograms.nam/METEODATE | cut -c15-16`
+echo $cyc
+if [ $cyc -eq 00 -o $cyc -eq 12 ] 
+then
+scp *gif wd20mg@emcrzdm:/home/people/emc/www/htdocs/mmb/nammeteograms/images/.
+#scp *gif wd20mg@emcrzdm:/home/people/emc/www/htdocs/users/Geoffrey.Manikin/nammeteograms/images/.
+else
+scp *gif wd20mg@emcrzdm:/home/people/emc/www/htdocs/mmb/nammeteograms/images_off/.
+fi
+exit
+

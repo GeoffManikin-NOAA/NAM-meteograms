@@ -1,0 +1,190 @@
+#!/bin/sh
+echo 'into'
+
+piece=$1
+cycle=$2
+fhrs=$3
+
+#sleep_num=`expr ${piece} \* 2`
+#sleep $sleep_num
+
+#da00=20020214
+#cycle=12
+
+if [ ! -s /gpfs/dell1/stmp/Geoffrey.Manikin/cloudgrams.nam/cloud${piece} ]
+then
+  echo exiting
+  exit
+fi
+cd /gpfs/dell1/stmp/Geoffrey.Manikin/cloudgrams.nam/cloud${piece}
+cp /gpfs/dell2/emc/verification/save/Geoffrey.Manikin/meg/coltbl.xwp .
+
+tstrt=`cut -c 7-16 /gpfs/hps/nco/ops/com/date/t${cycle}z`
+da00=`cut -c 7-14 /gpfs/hps/nco/ops/com/date/t${cycle}z`
+cent=`cut -c 7-8 /gpfs/hps/nco/ops/com/date/t${cycle}z`
+
+tfhrs=`echo $fhrs | cut -d- -f1`
+tfhrs="$tfhrs `echo $fhrs | cut -d- -f2`"
+
+echo $tstrt
+echo $cycle
+echo $tfhrs
+
+remainder=1
+divisor=12
+
+if test "$cycle" = '00'
+then
+ cycleoff=12
+fi
+
+if test "$cycle" = '12'
+then
+ cycleoff=00
+fi
+
+if test "$cycle" = '06'
+then
+ cycleoff=18
+fi
+
+if test "$cycle" = '18'
+then
+ cycleoff=06
+fi
+
+while [ $remainder -gt 0 -a $divisor -gt 0 ]
+do
+    tmp=`echo $tfhrs | cut -d" " -f2`
+    ninc=`expr $tmp / $divisor`
+    remainder=`expr $tmp / $divisor`
+    divisor=`expr $divisor - 1`
+done
+
+divisor=`expr $divisor + 1`
+times="`/gpfs/dell2/emc/verification/save/Geoffrey.Manikin/meteograms.nam/advtime $tstrt $divisor $ninc gem`"
+echo $tstrt $divisor $ninc
+ntimes=`echo $times | wc -w`
+t0=`echo $times | cut -d" " -f1`
+t0=`echo $t0 | cut -c 3-11`
+
+#  Determine ending time.
+
+remainder=1
+divisor=12
+while [ $remainder -gt 0 -a $divisor -gt 0 ]
+do
+    tmp2=`echo $tfhrs | cut -d" " -f2`
+    ninc=`expr $tmp / $divisor`
+    remainder=`expr $tmp2 / $divisor`
+    divisor=`expr $divisor - 1`
+done
+
+divisor=`expr $divisor + 1`
+set times = `/gpfs/dell2/emc/verification/save/Geoffrey.Manikin/meteograms.nam/advtime $tstrt $divisor $ninc gem`
+
+ntimes=`echo $times | wc -w`
+tf=`echo $times | cut -d" " -f$ntimes`
+tf=`echo $tf | cut -c 3-11`
+dattim="${t0}-${tf}"
+tf1=`echo $tf | cut -c1-6`
+tf1=$cent$tf1$cycleoff
+tf2="`/gpfs/dell2/emc/verification/save/Geoffrey.Manikin/meteograms.nam/advtime $tf1 2 -1 x`"
+tf2=`echo $tf2 | cut -c3-11`
+
+# ****** Finished time range ******
+
+cd /gpfs/dell1/stmp/Geoffrey.Manikin/cloudgrams.nam/cloud${piece}
+
+file_name=input_list_${piece}
+cp /gpfs/dell2/emc/verification/save/Geoffrey.Manikin/meteograms.nam/$file_name .
+
+nlines=`cat $file_name | wc -l`
+line=0
+
+fmdl=/gpfs/dell1/nco/ops/com/nam/prod/nam.${da00}/nam_${da00}${cycle}.snd.tm00
+
+while [ $line -lt $nlines ]
+do 
+  line=`expr $line + 1`    
+  stn=`awk 'NR==j{print $0}' j=$line $file_name`
+
+stnm=`echo $stn | cut -c1-6`
+stid=`echo $stn | cut -c8-34`
+echo $stnm
+
+if test "$stnm" = "done"
+then
+/bin/rm $$.pack
+gpend
+mv *gif /gpfs/dell1/stmp/Geoffrey.Manikin/cloudgrams.nam/hold/.
+exit
+fi
+
+    sncross << EOF /dev/null
+CXSTNS   = $stnm
+SNPARM   = imxr*100000.
+SNFILE   = $fmdl
+DATTIM   = all
+VCOORD   = PRES
+PTYPE    = LOG
+YAXIS    = 1075/130/100
+TAXIS    = ${tf2}-${t0}-06
+LINE     = 0 
+BORDER   = 1;0;8
+CINT     = 1;9;17;25;33;41;49
+WIND     = 0
+TITLE    = 1//  $stnm    $stid    $t0 - $tf
+PANEL    = 0
+DEVICE   = GIF|${stnm}.cloud.gif | 950;850
+CLEAR    = YES
+FILTER   = 1.0
+TEXT     = medium/22/2////HW 
+CURVE    = 1
+CLRBAR   =
+CONTUR   = /1
+FINT     = 1;9;17;25;33;41;49
+FLINE    = 0;24;25;26;27;28;29;30
+CTYPE    = f/c
+r
+
+CLEAR    = NO
+SNPARM   = CWTR*100000.
+CINT     = 1;12;24;36;48;60;72;84
+FINT     = 1;12;24;36;48;60;72;84
+FLINE    = 0;23;22;21;20;5;17;2;15
+r
+
+CLEAR    = NO
+SNPARM   = TMPC
+LINE     = 1/1/4/0
+CINT     = 0/0/0
+CTYPE    = C
+r
+
+CLEAR    = NO
+SNPARM   = TMPC
+LINE     = 1/3/4/0
+CINT     = -15/-15/-15
+CTYPE    = C
+
+r
+
+CLEAR    = NO
+DATTIM   = ${t0}-${tf}-03
+WIND     = bk1//3
+r
+
+ex
+EOF
+
+gpbox << EOF
+LINE    = 1/1/4
+REGION  = plot
+r
+EOF
+
+gpend
+done
+
+exit

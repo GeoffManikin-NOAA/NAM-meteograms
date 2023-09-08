@@ -1,0 +1,15 @@
+#!/bin/ksh
+
+source /u/Geoffrey.Manikin/.bashrc
+
+cyc=`cut -c 15-16 /gpfs/dell1/nco/ops/com/date/t12z`
+ymd=`cut -c 7-14 /gpfs/dell1/nco/ops/com/date/t12z`
+
+if [ ! -s /gpfs/dell1/nco/ops/com/nam/prod/nam.${ymd}/nam_${ymd}${cyc}.snd.tm00 ]
+then
+  sleep 600 
+fi
+
+cd /gpfs/dell2/emc/verification/save/Geoffrey.Manikin/meteograms.nam
+bsub < run_cloud_poe12
+exit
